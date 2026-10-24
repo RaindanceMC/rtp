@@ -1,0 +1,74 @@
+id: rtp
+title: Random teleport
+summary: /rtp sends you somewhere random in your world — how far, how safe, what it costs and how often.
+intro: |
+  Bored of the same old view? Type {cmd:/rtp} and I will throw you somewhere you have never been. Gently, if you ask me to.
+icon: ENDER_PEARL
+category: Getting around
+order: 30
+module: rtp
+aliases: [wild, randomtp, random-teleport, randomteleport, random]
+keywords: [explore, teleport, wilderness, far, away, resource, travel, tp]
+commands: [rtp]
+sections:
+  - question: How do I teleport somewhere random?
+    title: Using /rtp
+    text: |
+      Type {run:/rtp} (or {cmd:/wild}, {cmd:/randomtp}). It sends you to a random spot <b>in the world you are standing in</b>.
+      {if:rtp:safe-arrival-policy == available}You are first asked how you want to land: <green>Safe landing</green> or <red>Into the unknown</red> — see below.{/if}{if:rtp:safe-arrival-policy == forced_on}Your landing is always checked for safety.{/if}{if:rtp:safe-arrival-policy == forced_off || rtp:safe-arrival-policy == disabled}Your landing is <i>not</i> checked for safety — see the warning below.{/if}
+      Only players can do it, and every answer is a chat line: if nothing happens, you were told why.
+  - question: How far will I land?
+    title: Distance
+    text: |
+      Somewhere between {setting:rtp:min-radius|count} and {setting:rtp:max-radius|count} blocks from {if:rtp:centre-on-player}<b>where you are standing</b>{else}the world's spawn{/if}. The outer edge is also held inside the world border, so a small border wins.
+      Want to go further out? Type {cmd:/rtp <distance>} — the spot is then at least that many blocks away, for this trip only. A word that is not a number is refused.
+  - question: What is the wait before I go?
+    title: Standing still
+    text: |
+      {if:rtp:rtp-warmup-seconds > 0}You must stand still for {setting:rtp:rtp-warmup-seconds|seconds} before you are sent; a countdown tells you how long. Move off your block and the trip is called off.{/if}{if:rtp:rtp-warmup-seconds == 0}You are sent at once, no waiting.{/if}
+      {if:rtp:rtp-warmup-seconds > 0 && rtp:rtp-hurt-cancels-warmup}Take damage while counting down and it is called off too — so this is no escape from a fight.{/if}{if:rtp:rtp-warmup-seconds > 0 && !rtp:rtp-hurt-cancels-warmup}Taking damage does <i>not</i> stop it.{/if}
+      Staff with the right permission skip the standing still. Nobody else gets to haggle.
+  - question: How often can I use it?
+    title: Cooldown
+    text: |
+      {if:rtp:rtp-cooldown-seconds > 0}After you <i>arrive</i> you must wait {setting:rtp:rtp-cooldown-seconds|seconds} before the next random teleport. A trip that was called off, refused or found nowhere safe costs you no wait. Logging out does not reset it — I thought of that before you did.{else}There is no wait between random teleports.{/if}
+      {if:rtp:rtp.skip-cooldown-price != 0 && rtp:rtp-cooldown-seconds > 0}While you wait, I offer a <green>[Skip the wait]</green> button for {setting:rtp:rtp.skip-cooldown-price|money}. It is good for 30 seconds, and nothing is taken until the trip is really on its way.{/if}
+  - question: Safe landing or into the unknown?
+    title: Safe landing
+    text: |
+      {if:rtp:safe-arrival-policy == available}You choose, every trip:
+      <green>Safe landing</green> — I look for solid natural ground within {setting:rtp:rtp-safe-arrival-radius|count} blocks of the point (never a tree, a roof or a bridge), and avoid the bottom of a ravine or a cave mouth: the ground may differ by at most {setting:rtp:height-tolerance|count} blocks from its surroundings. If the first point has nothing safe near it, I try again with a new point, up to three times, before giving up. All that happens before you stand still, so nobody waits for a trip that was never going to work.
+      <red>Into the unknown</red> — no search whatsoever. You arrive from above, wherever the point happens to be: lava, deep water, a cliff, the void. Nobody is stopping you. Your choice is for that one trip only.{/if}{if:rtp:safe-arrival-policy == forced_on}Every landing is checked: I look for solid natural ground within {setting:rtp:rtp-safe-arrival-radius|count} blocks of the point (never a tree, a roof or a bridge), and avoid the bottom of a ravine or a cave mouth — the ground may differ by at most {setting:rtp:height-tolerance|count} blocks from its surroundings. If nothing is found I try again with a new point, up to three times, before telling you so.{/if}{if:rtp:safe-arrival-policy == forced_off || rtp:safe-arrival-policy == disabled}This server does <b>not</b> check landings. You arrive from above wherever the random point is — lava, deep water, a cliff or the void included. Random teleport here can kill you; bring a bucket of water and a sense of adventure.{/if}
+  - question: What if it says nowhere is safe?
+    title: Nowhere safe
+    when: rtp:safe-arrival-policy != forced_off && rtp:safe-arrival-policy != disabled
+    text: |
+      After three different random points with nothing safe nearby, I give up and say so — just type {cmd:/rtp} again, it costs you nothing and starts no wait. "The ground could not be checked" is the same story with a technical reason: try again.
+      If it keeps happening, the area may be mostly ocean or mountains; tell staff.
+  - question: What does it cost?
+    title: Price
+    text: |
+      {if:rtp:rtp.price != 0}A random teleport costs {setting:rtp:rtp.price|money}. It is taken when the trip is really on its way (after a safe spot was found) and <b>given back</b> if you move, get hurt, log out, or the teleport fails. If you cannot pay, you stay where you are and nothing is taken.{else}It is free.{/if}
+      Players with the free-teleport permission never pay for it.
+  - question: Are some worlds off limits?
+    title: Worlds
+    text: |
+      You can only go somewhere random in the world you are in; it does not take you between worlds.
+      {if:rtp:disabled-worlds}It does not work in: {setting:rtp:disabled-worlds}. A lobby or an arena is no place for a random point.{else}It works in every world.{/if}
+  - question: Why is it often instant?
+    title: Prepared spots
+    when: rtp:pool-enabled
+    text: |
+      Behind the scenes I keep a pool of already-checked spots, so most trips skip the search. Each spot is checked <i>again</i> the moment it is used (the ground may have changed), and I never send you to the same prepared spot twice. After each trip one more is prepared for the next traveller. If the pool has nothing for you, I search live like always. Asking for your own minimum distance with {cmd:/rtp <distance>} skips the pool.
+  - question: How do I fill the spot pool?
+    title: Preparing spots
+    permission: rainsrtp.rtp.prepare
+    when: rtp:pool-enabled
+    text: |
+      {cmd:/rtp prepare [amount]} searches for more spots right now, in the world you stand in (or the first world from the console). Without an amount it prepares {setting:rtp:pool-daily-minimum|count}, never more than fits under the ceiling of {setting:rtp:pool-max-size|count} ready spots across all worlds. You are told how many were asked for, and again how many were actually found.
+      Every day the pool is topped up to at least {setting:rtp:pool-daily-minimum|count} per world automatically{if:rtp:pool-daily-minimum == 0} (that top-up is switched off here){/if}. Searching thousands of chunks costs the server real time and disk — go easy.
+  - question: What can staff skip?
+    title: Bypass permissions
+    permission: rainsrtp.rtp.prepare
+    text: |
+      <white>rainsrtp.rtp.bypass.cooldown</white> skips the wait between trips (and so never pays for skipping it), <white>rainsrtp.rtp.bypass.warmup</white> the standing still, <white>rainsrtp.rtp.bypass.fee</white> all prices. <white>rainsrtp.rtp.use</white> lets somebody use {cmd:/rtp} at all — everybody has it unless taken away. Change the numbers in {run:/settings} under <white>Random teleport</white>; the guide quotes the new values at once.
