@@ -41,6 +41,9 @@ class RtpGridDialogTest {
         DialogPage page = page(false);
         assertThat(page.button("✦ Middle").allowed()).isFalse();
         assertThat(page.button("↑ North").allowed()).isTrue();
+        // the refusal is shown as written, so no markup in it
+        assertThat(net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                .serialize(page.button("✦ Middle").tooltip())).doesNotContain("<");
     }
 
     /** Escape presses the way out, so the way out must never be a trip. */

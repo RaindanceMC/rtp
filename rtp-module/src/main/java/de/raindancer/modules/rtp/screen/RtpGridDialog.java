@@ -68,7 +68,7 @@ public final class RtpGridDialog {
                 .columns(3);
         for (Tile tile : tiles) {
             page.button(tile.available(), label(tile), tooltip(tile),
-                    "<gray>Staff have not set this point up yet.", answers -> go.accept(tile.tile()));
+                    "Staff have not set this point up yet.", answers -> go.accept(tile.tile()));
         }
         // A button, never the way out: Escape presses the way out, and closing the map must not send anybody anywhere.
         return page.button(DialogPage.WIDE, "<light_purple>✦ Surprise me", "<gray>Any tile but the one you are in.",
