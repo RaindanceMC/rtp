@@ -62,7 +62,7 @@ public final class RtpGridMenu extends Menu implements IRtpScreen {
         Location here = viewer.getLocation();
         GridTile standing = layout.tileAt(here.getX(), here.getZ());
 
-        set(MenuLayout.HEADER_SUBJECT, Icons.of(Material.FILLED_MAP, "<white>Teleport map",
+        set(MenuLayout.HEADER_SUBJECT, Icons.of(Material.FILLED_MAP, "<white>Quadrants",
                 "<gray>The world in nine tiles around spawn.",
                 "<gray>North is up. Pick one to go to its point.",
                 "<dark_gray>You are in <white>" + standing.title() + "</white>."));

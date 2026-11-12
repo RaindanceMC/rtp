@@ -54,7 +54,8 @@
         <!-- 1.7.1: Escape closes the map; Surprise me is a button of its own, no longer the way out. -->
         <!-- 1.7.2: the unset middle's refusal without a stray <gray> tag in it. -->
         <!-- 1.7.3: the map's heading in the server's own brand gradient. -->
-        <plugin.version>1.7.3</plugin.version>
+        <!-- 1.8.0: the grid is "Quadrants": /q (and /quadrants) beside /rtp, the map and its claims named so (quadrant-<tile>; an old rtp-<tile> claim makes way). -->
+        <plugin.version>1.8.0</plugin.version>
     </properties>
 
     <dependencies>

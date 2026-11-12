@@ -29,7 +29,7 @@ import java.util.List;
         @Topic(path = "rtp/where", title = "Where somebody may land", icon = Material.MAP),
         @Topic(path = "rtp/pool", title = "Getting ready ahead of time", icon = Material.CHEST),
         @Topic(path = "rtp/prices", title = "What it costs", icon = Material.GOLD_INGOT),
-        @Topic(path = "rtp/grid", title = "Fixed points in a 3x3 grid", icon = Material.FILLED_MAP),
+        @Topic(path = "rtp/grid", title = "Quadrants", icon = Material.FILLED_MAP),
 })
 public record RtpSettings(
 

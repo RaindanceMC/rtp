@@ -99,8 +99,10 @@ class GridTest {
     @Test
     @DisplayName("claim names stay usable in any world")
     void claimNames() {
-        assertThat(GridPoint.claimName("world", GridTile.NORTH_WEST)).isEqualTo("rtp-north-west");
-        assertThat(GridPoint.claimName("world_nether", GridTile.NORTH_WEST)).isEqualTo("rtp-world_nether-nw");
+        assertThat(GridPoint.claimName("world", GridTile.NORTH_WEST)).isEqualTo("quadrant-north-west");
+        assertThat(GridPoint.claimName("world_nether", GridTile.NORTH_WEST)).isEqualTo("quadrant-world_nether-nw");
+        // what they were called before the quadrants had a name, so the old claim can make way
+        assertThat(GridPoint.formerClaimName("world", GridTile.NORTH_WEST)).isEqualTo("rtp-north-west");
         assertThat(GridPoint.claimName("a very long world name indeed", GridTile.SOUTH_EAST))
                 .matches("[A-Za-z0-9_\\-]{3,24}");
     }

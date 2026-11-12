@@ -189,6 +189,7 @@ public final class RtpGridService implements IRtpService {
         }
         if (had && land != null) {
             land.releaseForServer(GridPoint.claimName(world.getName(), tile));
+            land.releaseForServer(GridPoint.formerClaimName(world.getName(), tile));
         }
         return had;
     }
@@ -221,6 +222,8 @@ public final class RtpGridService implements IRtpService {
         }
         int[] square = point.square(size);
         String name = GridPoint.claimName(world.getName(), point.tile());
+        // A claim from before the quadrants had their name would overlap the new one.
+        land.releaseForServer(GridPoint.formerClaimName(world.getName(), point.tile()));
         Optional<String> refused = land.holdForServer(world, name, square[0], square[1], square[2], square[3]);
         refused.ifPresent(why -> {
             if (log != null) {

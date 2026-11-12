@@ -27,7 +27,7 @@ public final class RtpGridDialog {
     /** In the server's own brand gradient (Core's brand-from / brand-to), like every other window of the server. */
     static String heading() {
         return "<gradient:" + de.raindancer.core.ui.chat.Style.brandFrom() + ":"
-                + de.raindancer.core.ui.chat.Style.brandTo() + ">Random teleport</gradient>";
+                + de.raindancer.core.ui.chat.Style.brandTo() + ">Quadrants</gradient>";
     }
 
     /** One tile as the dialog shows it — plain data, so the page can be built and checked without a server. */
@@ -42,7 +42,7 @@ public final class RtpGridDialog {
         World world = viewer.getWorld();
         if (grid == null || !grid.appliesIn(world)) {
             DialogPage.titled(heading(), "Where to?")
-                    .text("<red>This world has no teleport map.")
+                    .text("<red>This world has no quadrants.")
                     .show(viewer);
             return;
         }

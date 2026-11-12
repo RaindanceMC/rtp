@@ -71,7 +71,8 @@ class RtpGridServiceTest {
         });
         assertThat(again).isEqualTo(found);
         verify(safety, times(1)).findSafeAtConsistentHeight(any(), anyInt(), anyInt(), any());
-        verify(land).holdForServer(world, "rtp-north", 28, -2705, 34, -2699);
+        verify(land).holdForServer(world, "quadrant-north", 28, -2705, 34, -2699);
+        verify(land).releaseForServer("rtp-north");
         assertThat(new RtpPointStorage(folder).load()).containsExactly(found.get());
     }
 
@@ -104,7 +105,7 @@ class RtpGridServiceTest {
             assertThat(point.yaw()).isEqualTo(90f);
             assertThat(point.placedByAdmin()).isTrue();
         });
-        verify(land).holdForServer(world, "rtp-middle", 37, 637, 43, 643);
+        verify(land).holdForServer(world, "quadrant-middle", 37, 637, 43, 643);
         assertThat(grid.available(world)).contains(GridTile.MIDDLE);
     }
 
@@ -131,7 +132,7 @@ class RtpGridServiceTest {
 
         assertThat(grid.clear(world, GridTile.MIDDLE)).isTrue();
         assertThat(grid.point(world, GridTile.MIDDLE)).isEmpty();
-        verify(land).releaseForServer("rtp-middle");
+        verify(land).releaseForServer("quadrant-middle");
         assertThat(grid.clear(world, GridTile.MIDDLE)).isFalse();
     }
 

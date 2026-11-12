@@ -20,12 +20,14 @@ class RtpCommandsTest {
     class Declaring {
 
         @Test
-        @DisplayName("there is exactly one command, and it is /rtp")
-        void oneCommand() {
+        @DisplayName("/rtp, and /q for the quadrants — the same command under the grid's own name")
+        void twoNames() {
             List<ModuleCommand> declared = RtpCommands.declared();
 
-            assertThat(declared).hasSize(1);
+            assertThat(declared).hasSize(2);
             assertThat(declared.getFirst().name()).isEqualTo("rtp");
+            assertThat(declared.get(1).name()).isEqualTo("q");
+            assertThat(declared.get(1).names()).contains("q", "quadrants");
         }
 
         @Test

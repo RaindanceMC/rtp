@@ -36,6 +36,11 @@ public final class RtpCommands {
                 ModuleCommand.of("rtp", "Go somewhere random in your own world",
                                 new RtpCommand(RtpCommands::require))
                         .aliased("wild", "randomtp")
+                        .needing(PermissionNodes.USE),
+                // The quadrants' own name: the same command, so a world without a grid still sends you somewhere random.
+                ModuleCommand.of("q", "Opens the quadrants: the nine fixed teleport points around spawn",
+                                new RtpCommand(RtpCommands::require))
+                        .aliased("quadrants")
                         .needing(PermissionNodes.USE));
     }
 

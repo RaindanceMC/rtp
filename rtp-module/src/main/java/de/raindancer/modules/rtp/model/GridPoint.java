@@ -32,17 +32,26 @@ public record GridPoint(String world, GridTile tile, double x, double y, double 
         return new int[]{blockX() - half, blockZ() - half, blockX() + half, blockZ() + half};
     }
 
-    /** "rtp-north-west" in the main world, "rtp-&lt;world&gt;-nw" anywhere else, always a usable claim name. */
+    /** "quadrant-north-west" in the main world, "quadrant-&lt;world&gt;-nw" anywhere else, always a usable claim name. */
     public static String claimName(String world, GridTile tile) {
+        return named("quadrant-", world, tile);
+    }
+
+    /** What the claim was called before the quadrants had their name — so an old one can make way. */
+    public static String formerClaimName(String world, GridTile tile) {
+        return named("rtp-", world, tile);
+    }
+
+    private static String named(String prefix, String world, GridTile tile) {
         if (world == null || world.equals("world")) {
-            return "rtp-" + tile.key();
+            return prefix + tile.key();
         }
         String cleaned = world.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_\\-]", "");
         String tail = "-" + tile.shortName();
-        int room = NAME_LIMIT - "rtp-".length() - tail.length();
+        int room = NAME_LIMIT - prefix.length() - tail.length();
         if (cleaned.length() > room) {
-            cleaned = cleaned.substring(0, room);
+            cleaned = cleaned.substring(0, Math.max(0, room));
         }
-        return "rtp-" + cleaned + tail;
+        return prefix + cleaned + tail;
     }
 }
