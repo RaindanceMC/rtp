@@ -67,15 +67,25 @@ public final class RtpGridMenu extends Menu implements IRtpScreen {
                 "<gray>North is up. Pick one to go to its point.",
                 "<dark_gray>You are in <white>" + standing.title() + "</white>."));
 
+        // Fixed slots, not cell(): cell() centres a row's buttons as a group, and the middle row has the extra
+        // "Surprise me" — it slid West, Middle and East one slot left of the rows above and below.
         for (GridTile tile : GridTile.values()) {
-            cell(2 + tile.dz(), LEFT + 1 + tile.dx(), icon(grid, world, layout, tile, tile == standing),
-                    available(grid, world, tile) ? click -> go(tile) : null);
+            set(tileSlot(tile), icon(grid, world, layout, tile, tile == standing),
+                    available(grid, world, tile) ? click -> go(tile) : click -> { });
         }
-        cell(2, 7, Icons.of(Material.ENDER_PEARL, "<light_purple>Surprise me",
+        set(SURPRISE, Icons.of(Material.ENDER_PEARL, "<light_purple>Surprise me",
                 "<gray>Any tile but the one you are in."), click -> {
             viewer.closeInventory();
             services.rtp().goToRandomTile(viewer);
         });
+    }
+
+    /** Where "Surprise me" sits: the middle row, right of the grid with a gap. */
+    static final int SURPRISE = 2 * 9 + 7;
+
+    /** The tile's slot: north up, the middle tile in the window's centre column. */
+    static int tileSlot(GridTile tile) {
+        return (2 + tile.dz()) * 9 + LEFT + 1 + tile.dx();
     }
 
     private static boolean available(RtpGridService grid, World world, GridTile tile) {

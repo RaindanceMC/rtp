@@ -52,7 +52,7 @@ import java.util.Random;
  */
 public final class RtpModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("rtp", "Random Teleport", "1.6.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("rtp", "Random Teleport", "1.7.0")
             .describedAs("Sends a player somewhere random in their own world, inside a ring an owner "
                     + "sets — the warm-up, the safe landing and the teleport are RainsCore's Travel")
             .by("Raindancer118");
@@ -174,7 +174,12 @@ public final class RtpModule implements FlexModule {
 
         @Override
         public void grid(Player viewer) {
-            new RtpGridMenu(services, viewer, null).open();
+            // The game's own dialog, as Core draws its windows; a server that keeps chests gets the chest map.
+            if (Boolean.getBoolean("rains.anvil")) {
+                new RtpGridMenu(services, viewer, null).open();
+            } else {
+                de.raindancer.modules.rtp.screen.RtpGridDialog.open(services, viewer);
+            }
         }
     }
 
