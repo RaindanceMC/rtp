@@ -53,7 +53,8 @@
         <!-- 1.7.0: the map is the game's own dialog — nine buttons north up, tooltips with point and distance, Surprise me below. -->
         <!-- 1.7.1: Escape closes the map; Surprise me is a button of its own, no longer the way out. -->
         <!-- 1.7.2: the unset middle's refusal without a stray <gray> tag in it. -->
-        <plugin.version>1.7.2</plugin.version>
+        <!-- 1.7.3: the map's heading in the server's own brand gradient. -->
+        <plugin.version>1.7.3</plugin.version>
     </properties>
 
     <dependencies>

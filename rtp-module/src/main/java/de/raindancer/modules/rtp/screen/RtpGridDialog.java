@@ -24,7 +24,11 @@ import java.util.function.Consumer;
  */
 public final class RtpGridDialog {
 
-    static final String HEADING = "<gradient:#6EC1EA:#A78BFA>Random teleport</gradient>";
+    /** In the server's own brand gradient (Core's brand-from / brand-to), like every other window of the server. */
+    static String heading() {
+        return "<gradient:" + de.raindancer.core.ui.chat.Style.brandFrom() + ":"
+                + de.raindancer.core.ui.chat.Style.brandTo() + ">Random teleport</gradient>";
+    }
 
     /** One tile as the dialog shows it — plain data, so the page can be built and checked without a server. */
     public record Tile(GridTile tile, boolean available, boolean standing, int x, int z, boolean found, long distance) {
@@ -37,7 +41,7 @@ public final class RtpGridDialog {
         RtpGridService grid = services.rtp().grid();
         World world = viewer.getWorld();
         if (grid == null || !grid.appliesIn(world)) {
-            DialogPage.titled(HEADING, "Where to?")
+            DialogPage.titled(heading(), "Where to?")
                     .text("<red>This world has no teleport map.")
                     .show(viewer);
             return;
@@ -61,7 +65,7 @@ public final class RtpGridDialog {
 
     static DialogPage page(List<Tile> tiles, GridTile standing, java.util.function.Supplier<ItemStack> map,
                            Consumer<GridTile> go, Runnable surprise) {
-        DialogPage page = DialogPage.titled(HEADING, "Where to?")
+        DialogPage page = DialogPage.titled(heading(), "Where to?")
                 .item(map, "<gray>The world in nine tiles around spawn, <white>north up</white>.\n"
                         + "<gray>Pick one to go to its point.\n"
                         + "<dark_gray>You are in <white>" + standing.title() + "</white>.")
