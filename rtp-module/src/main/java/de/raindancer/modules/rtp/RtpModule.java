@@ -52,7 +52,7 @@ import java.util.Random;
  */
 public final class RtpModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("rtp", "Random Teleport", "1.7.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("rtp", "Random Teleport", "1.7.1")
             .describedAs("Sends a player somewhere random in their own world, inside a ring an owner "
                     + "sets — the warm-up, the safe landing and the teleport are RainsCore's Travel")
             .by("Raindancer118");

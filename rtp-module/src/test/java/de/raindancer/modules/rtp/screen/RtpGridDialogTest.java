@@ -27,7 +27,7 @@ class RtpGridDialogTest {
     @Test
     void nineTilesInReadingOrderThreeToARow() {
         DialogPage page = page(true);
-        List<String> labels = page.pressable().stream()
+        List<String> labels = page.pressable().stream().limit(9)
                 .map(button -> net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
                         .serialize(button.label()))
                 .toList();
@@ -43,9 +43,12 @@ class RtpGridDialogTest {
         assertThat(page.button("↑ North").allowed()).isTrue();
     }
 
+    /** Escape presses the way out, so the way out must never be a trip. */
     @Test
-    void surpriseMeIsTheWayOut() {
+    void escapeOnlyCloses() {
+        DialogPage page = page(true);
         assertThat(net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-                .serialize(page(true).exitButton().label())).isEqualTo("✦ Surprise me");
+                .serialize(page.exitButton().label())).isEqualTo("Close");
+        assertThat(page.button("✦ Surprise me").allowed()).isTrue();
     }
 }

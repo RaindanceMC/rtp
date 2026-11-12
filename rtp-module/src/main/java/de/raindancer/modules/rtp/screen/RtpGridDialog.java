@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 /**
  * The teleport map in the game's own dialog: the nine tiles as a three-by-three of buttons, north up, each saying
  * where its point is and how far; the tile you stand in marked; the middle greyed until staff set it; and "Surprise me"
- * at the bottom. {@link RtpGridMenu} is the same as a chest, for a server that keeps chests ({@code -Drains.anvil=true}).
+ * below them; Escape only closes. {@link RtpGridMenu} is the same as a chest, for a server that keeps chests ({@code -Drains.anvil=true}).
  */
 public final class RtpGridDialog {
 
@@ -70,7 +70,10 @@ public final class RtpGridDialog {
             page.button(tile.available(), label(tile), tooltip(tile),
                     "<gray>Staff have not set this point up yet.", answers -> go.accept(tile.tile()));
         }
-        return page.exit("<light_purple>✦ Surprise me", surprise);
+        // A button, never the way out: Escape presses the way out, and closing the map must not send anybody anywhere.
+        return page.button(DialogPage.WIDE, "<light_purple>✦ Surprise me", "<gray>Any tile but the one you are in.",
+                        answers -> surprise.run())
+                .exit("<gray>Close", null);
     }
 
     private static String label(Tile tile) {
