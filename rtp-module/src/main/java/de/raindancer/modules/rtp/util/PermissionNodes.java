@@ -31,6 +31,9 @@ public final class PermissionNodes {
     /** Preparing locations ahead of time by hand, with {@code /rtp prepare}. */
     public static final String PREPARE = "rainsrtp.rtp.prepare";
 
+    /** Setting, moving and clearing the grid's fixed teleport points, with {@code /rtp point}. */
+    public static final String POINTS = "rainsrtp.rtp.points";
+
     private PermissionNodes() {
     }
 
@@ -44,6 +47,8 @@ public final class PermissionNodes {
                 new Permission(BYPASS_FEE, "Random teleport without paying for it",
                         PermissionDefault.OP),
                 new Permission(PREPARE, "Prepare random-teleport locations ahead of time by hand",
+                        PermissionDefault.OP),
+                new Permission(POINTS, "Set, move and clear the fixed teleport points of the grid",
                         PermissionDefault.OP));
     }
 

@@ -12,6 +12,9 @@ import de.raindancer.modules.api.ModuleInfo;
 import de.raindancer.modules.rtp.listener.RtpSessionListener;
 import de.raindancer.modules.rtp.rules.RtpRule;
 import de.raindancer.modules.rtp.screen.RtpChooserMenu;
+import de.raindancer.modules.rtp.screen.RtpGridMenu;
+import de.raindancer.modules.rtp.service.RtpGridService;
+import de.raindancer.modules.rtp.store.RtpPointStorage;
 import de.raindancer.modules.rtp.service.RtpLocationPoolService;
 import de.raindancer.modules.rtp.service.RtpService;
 import de.raindancer.modules.rtp.store.RtpLocationRegistry;
@@ -49,7 +52,7 @@ import java.util.Random;
  */
 public final class RtpModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("rtp", "Random Teleport", "1.5.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("rtp", "Random Teleport", "1.6.0")
             .describedAs("Sends a player somewhere random in their own world, inside a ring an owner "
                     + "sets — the warm-up, the safe landing and the teleport are RainsCore's Travel")
             .by("Raindancer118");
@@ -123,6 +126,14 @@ public final class RtpModule implements FlexModule {
         // config does not work".
         settings.onChange(rtp::settings);
 
+        // The 3x3 grid of fixed points. Always built, so switching it on through /settings needs no restart.
+        RtpGridService grid = new RtpGridService(context.core().safety(), context.core().land(),
+                new RtpPointStorage(context.dataFolder()), log, settings.current(),
+                task -> Scheduling.global(context.plugin(), task));
+        grid.load();
+        settings.onChange(grid::settings);
+        rtp.grid(grid);
+
         // Core's, not a second copy of "stand still or it is cancelled". Whether being hurt counts is
         // the owner's decision, read from the settings at registration — a server with mobs at spawn
         // and a five-second warm-up otherwise has a random teleport nobody can complete.
@@ -159,6 +170,11 @@ public final class RtpModule implements FlexModule {
             // null parent: this is an entry point from a command, and Core draws no Back button on a
             // parentless menu — right, since there is nowhere behind it to go back to.
             new RtpChooserMenu(services, viewer, minDistance, null).open();
+        }
+
+        @Override
+        public void grid(Player viewer) {
+            new RtpGridMenu(services, viewer, null).open();
         }
     }
 

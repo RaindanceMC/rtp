@@ -17,6 +17,11 @@ sections:
       Type {run:/rtp} (or {cmd:/wild}, {cmd:/randomtp}). It sends you to a random spot <b>in the world you are standing in</b>.
       {if:rtp:safe-arrival-policy == available}You are first asked how you want to land: <green>Safe landing</green> or <red>Into the unknown</red> — see below.{/if}{if:rtp:safe-arrival-policy == forced_on}Your landing is always checked for safety.{/if}{if:rtp:safe-arrival-policy == forced_off || rtp:safe-arrival-policy == disabled}Your landing is <i>not</i> checked for safety — see the warning below.{/if}
       Only players can do it, and every answer is a chat line: if nothing happens, you were told why.
+  - question: How does the teleport map work?
+    title: The teleport map
+    text: |
+      {if:rtp:grid-enabled}Here the world is cut into nine tiles around spawn, three by three, and each tile has one fixed teleport point. {run:/rtp} opens the map: north is up, click a tile to go to its point, or <light_purple>Surprise me</light_purple> for any tile but the one you are in. {cmd:/rtp nw}, {cmd:/rtp se} or {cmd:/rtp random} go straight there.
+      The outer points are found the first time somebody goes; the middle one exists once staff set it. Each point stands on a protected patch, so its platform stays as built. Waiting, standing still and the price are the same as for any trip.{else}Not on this server: /rtp picks a random spot every time.{/if}
   - question: How far will I land?
     title: Distance
     text: |

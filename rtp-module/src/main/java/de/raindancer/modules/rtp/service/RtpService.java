@@ -23,6 +23,7 @@ import de.raindancer.core.world.teleport.TravelWatcher;
 import de.raindancer.core.world.teleport.Trip;
 import de.raindancer.core.world.time.Times;
 import de.raindancer.modules.rtp.RtpSettings;
+import de.raindancer.modules.rtp.model.GridTile;
 import de.raindancer.modules.rtp.rules.RtpFeeRule;
 import de.raindancer.modules.rtp.rules.RtpRule;
 import de.raindancer.modules.rtp.util.PermissionNodes;
@@ -135,6 +136,13 @@ public final class RtpService implements IRtpService {
     private final Cooldowns<UUID> between;
 
     private volatile RtpSettings settings;
+
+    /** The fixed points, when the grid is in use; null on a server that never set one up. */
+    private volatile RtpGridService grid;
+
+    public void grid(RtpGridService points) {
+        this.grid = points;
+    }
 
     /**
      * @param safety null on a host without Core's chunk holds — a checked trip then behaves as an
@@ -274,29 +282,12 @@ public final class RtpService implements IRtpService {
             return;
         }
         World world = traveller.getWorld();
-        Verdict allowed = rule.mayGo(world == null ? null : world.getName(), settings.disabledWorlds());
-        if (allowed.isRefused()) {
-            messages.send(traveller, allowed.reason(), "world", allowed.detail());
-            refused(traveller);
+        Optional<Boolean> cleared = mayStart(traveller, payToSkipWait,
+                clicked -> go(clicked, playerWantsSafe, minDistance, true));
+        if (cleared.isEmpty()) {
             return;
         }
-
-        // Asked, not spent — see the class note on why the wait is charged on arrival.
-        RtpFeeRule.AtCooldown atCooldown = feeRule.atCooldown(
-                between.isReady(traveller.getUniqueId()),
-                traveller.hasPermission(PermissionNodes.BYPASS_COOLDOWN),
-                skipPriceFor(traveller), payToSkipWait);
-        if (atCooldown == RtpFeeRule.AtCooldown.REFUSE) {
-            messages.send(traveller, "rtp.on-cooldown", "time", waitLeft(traveller.getUniqueId()));
-            play(traveller, Cues.COOLDOWN);
-            return;
-        }
-        if (atCooldown == RtpFeeRule.AtCooldown.OFFER) {
-            offerToSkip(traveller, playerWantsSafe, minDistance);
-            play(traveller, Cues.COOLDOWN);
-            return;
-        }
-        boolean payingSkip = atCooldown == RtpFeeRule.AtCooldown.GO_PAYING;
+        boolean payingSkip = cleared.get();
 
         Location raw = destinationIn(world, traveller, minDistance);
         boolean checked = rule.effectiveSafeArrival(settings.safeArrivalPolicy(), playerWantsSafe);
@@ -325,6 +316,123 @@ public final class RtpService implements IRtpService {
                     searchLive(traveller, raw, null, 1, payingSkip);
                     return null;
                 });
+    }
+
+    /**
+     * The questions every trip asks before it goes anywhere: is this world allowed, and is the wait over
+     * (or being paid for). Each refusal is said here.
+     *
+     * @param retryPaying what the "skip the wait" button does — the same trip again, paying
+     * @return whether the wait is being paid for; empty when the trip is off
+     */
+    private Optional<Boolean> mayStart(Player traveller, boolean payToSkipWait,
+                                       java.util.function.Consumer<Player> retryPaying) {
+        World world = traveller.getWorld();
+        Verdict allowed = rule.mayGo(world == null ? null : world.getName(), settings.disabledWorlds());
+        if (allowed.isRefused()) {
+            messages.send(traveller, allowed.reason(), "world", allowed.detail());
+            refused(traveller);
+            return Optional.empty();
+        }
+        // Asked, not spent — see the class note on why the wait is charged on arrival.
+        RtpFeeRule.AtCooldown atCooldown = feeRule.atCooldown(
+                between.isReady(traveller.getUniqueId()),
+                traveller.hasPermission(PermissionNodes.BYPASS_COOLDOWN),
+                skipPriceFor(traveller), payToSkipWait);
+        if (atCooldown == RtpFeeRule.AtCooldown.REFUSE) {
+            messages.send(traveller, "rtp.on-cooldown", "time", waitLeft(traveller.getUniqueId()));
+            play(traveller, Cues.COOLDOWN);
+            return Optional.empty();
+        }
+        if (atCooldown == RtpFeeRule.AtCooldown.OFFER) {
+            offerToSkip(traveller, retryPaying);
+            play(traveller, Cues.COOLDOWN);
+            return Optional.empty();
+        }
+        return Optional.of(atCooldown == RtpFeeRule.AtCooldown.GO_PAYING);
+    }
+
+    // ------------------------------------------------------------------------ the 3x3 grid
+
+    /** Whether /rtp in this world means the grid's fixed points rather than the random ring. */
+    public boolean gridIn(World world) {
+        return grid != null && grid.appliesIn(world);
+    }
+
+    /** The grid's points, for the map screen and the admin commands; null without one. */
+    public RtpGridService grid() {
+        return grid;
+    }
+
+    /** Sends this player to a tile's fixed point, finding it first if nobody has gone there yet. */
+    public void goToTile(Player traveller, GridTile tile) {
+        goToTile(traveller, tile, false);
+    }
+
+    private void goToTile(Player traveller, GridTile tile, boolean payToSkipWait) {
+        if (traveller == null || tile == null) {
+            return;
+        }
+        World world = traveller.getWorld();
+        if (!gridIn(world)) {
+            messages.send(traveller, "rtp.grid.not-here");
+            refused(traveller);
+            return;
+        }
+        Optional<Boolean> cleared = mayStart(traveller, payToSkipWait, clicked -> goToTile(clicked, tile, true));
+        if (cleared.isEmpty()) {
+            return;
+        }
+        boolean payingSkip = cleared.get();
+        boolean known = grid.point(world, tile).isPresent();
+        if (!known) {
+            showSearching(traveller);
+        }
+        grid.resolve(world, tile).thenAccept(found -> onThePlayersThread(traveller, () -> {
+            clearSearching(traveller);
+            if (!traveller.isOnline()) {
+                return;
+            }
+            if (found.isEmpty()) {
+                messages.send(traveller, tile == GridTile.MIDDLE ? "rtp.grid.middle-not-set" : "rtp.grid.no-point",
+                        "tile", tile.title());
+                refused(traveller);
+                return;
+            }
+            depart(traveller, RtpGridService.location(world, found.get()), payingSkip, tile.title());
+        })).exceptionally(failure -> {
+            if (log != null) {
+                log.warn("Could not find the {} teleport point: {}", tile.key(), failure.toString());
+            }
+            onThePlayersThread(traveller, () -> {
+                clearSearching(traveller);
+                messages.send(traveller, "rtp.could-not-check");
+                refused(traveller);
+            });
+            return null;
+        });
+    }
+
+    /** A tile at random, never the one they are standing in. */
+    public void goToRandomTile(Player traveller) {
+        if (traveller == null) {
+            return;
+        }
+        World world = traveller.getWorld();
+        if (!gridIn(world)) {
+            messages.send(traveller, "rtp.grid.not-here");
+            refused(traveller);
+            return;
+        }
+        GridTile here = grid.layout(world).tileAt(traveller.getLocation().getX(), traveller.getLocation().getZ());
+        java.util.List<GridTile> choices = new java.util.ArrayList<>(grid.available(world));
+        choices.remove(here);
+        if (choices.isEmpty()) {
+            messages.send(traveller, "rtp.grid.nowhere");
+            refused(traveller);
+            return;
+        }
+        goToTile(traveller, choices.get(random.nextInt(choices.size())));
     }
 
     /**
@@ -400,6 +508,11 @@ public final class RtpService implements IRtpService {
 
     /** The already-resolved destination is handed to Travel with no further search of its own. */
     private void depart(Player traveller, Location destination, boolean payingSkip) {
+        depart(traveller, destination, payingSkip, null);
+    }
+
+    /** @param tile the grid tile's name for a trip to a fixed point; null for a random one */
+    private void depart(Player traveller, Location destination, boolean payingSkip, String tile) {
         UUID who = traveller.getUniqueId();
         RtpFees.Charge charge = fees.charge(who, priceFor(traveller),
                 payingSkip ? skipPriceFor(traveller) : Money.ZERO);
@@ -412,8 +525,8 @@ public final class RtpService implements IRtpService {
             paid.put(who, charge.taken());
         }
         int warmup = traveller.hasPermission(PermissionNodes.BYPASS_WARMUP) ? 0 : settings.warmup();
-        Trip trip = Trip.to("somewhere new").after(warmup).exactly();
-        travel.go(traveller, destination, trip, new Wording());
+        Trip trip = Trip.to(tile == null ? "somewhere new" : tile).after(warmup).exactly();
+        travel.go(traveller, destination, trip, new Wording(tile));
     }
 
     /** What a trip costs this player: nothing at all with the bypass, or when the owner set no price. */
@@ -439,7 +552,7 @@ public final class RtpService implements IRtpService {
      * <p>Bound to this player alone and for a short while only; the click comes back through
      * {@code go} and so asks every question again, including whether the wait is in fact still running.
      */
-    private void offerToSkip(Player traveller, boolean playerWantsSafe, Integer minDistance) {
+    private void offerToSkip(Player traveller, java.util.function.Consumer<Player> retryPaying) {
         UUID who = traveller.getUniqueId();
         String price = Fees.format(Fees.quote(RtpFees.SKIP, skipPriceFor(traveller)));
         Component line = messages.prefixed("rtp.on-cooldown-skippable",
@@ -454,7 +567,7 @@ public final class RtpService implements IRtpService {
                 .does(clicker -> {
                     Player clicked = plugin.getServer().getPlayer(clicker);
                     if (clicked != null && clicked.isOnline()) {
-                        go(clicked, playerWantsSafe, minDistance, true);
+                        retryPaying.accept(clicked);
                     }
                 }).render();
         traveller.sendMessage(line.appendSpace().append(button));
@@ -533,9 +646,20 @@ public final class RtpService implements IRtpService {
      */
     private final class Wording implements TravelWatcher {
 
+        /** The grid tile this trip goes to; null for a random one. */
+        private final String tile;
+
+        Wording(String tile) {
+            this.tile = tile;
+        }
+
         @Override
         public void counting(Player traveller, int secondsLeft, Trip trip) {
-            messages.send(traveller, "rtp.warming-up", "seconds", secondsLeft);
+            if (tile == null) {
+                messages.send(traveller, "rtp.warming-up", "seconds", secondsLeft);
+            } else {
+                messages.send(traveller, "rtp.grid.warming-up", "seconds", secondsLeft, "tile", tile);
+            }
             // The ding each second is Core's, in the traveller's own sound if they picked one.
         }
 
@@ -554,8 +678,12 @@ public final class RtpService implements IRtpService {
                 messages.send(traveller, "rtp.paid", "price", Fees.format(spent.total()));
             }
             // No arrival cue here: Core's Travel plays it for every teleport, in the traveller's own choice.
-            messages.send(traveller, "rtp.arrived",
-                    "where", where.getBlockX() + ", " + where.getBlockZ());
+            String at = where.getBlockX() + ", " + where.getBlockZ();
+            if (tile != null) {
+                messages.send(traveller, "rtp.grid.arrived", "tile", tile, "where", at);
+                return;
+            }
+            messages.send(traveller, "rtp.arrived", "where", at);
             // One more prepared for the next person, so the pool keeps pace with how often it is
             // actually being spent rather than only catching up once a day — see
             // RtpLocationPoolService#afterATrip.

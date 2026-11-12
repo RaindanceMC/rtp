@@ -29,6 +29,7 @@ import java.util.List;
         @Topic(path = "rtp/where", title = "Where somebody may land", icon = Material.MAP),
         @Topic(path = "rtp/pool", title = "Getting ready ahead of time", icon = Material.CHEST),
         @Topic(path = "rtp/prices", title = "What it costs", icon = Material.GOLD_INGOT),
+        @Topic(path = "rtp/grid", title = "Fixed points in a 3x3 grid", icon = Material.FILLED_MAP),
 })
 public record RtpSettings(
 
@@ -134,18 +135,40 @@ public record RtpSettings(
         @Describe("Money to use /rtp while the wait between goes is still running. When set, the "
                 + "refusal offers it as a button to click. Zero keeps the wait as a plain refusal.")
         @Key("rtp.skip-cooldown-price")
-        String skipCooldownPrice) {
+        String skipCooldownPrice,
+
+        @In("rtp/grid") @Title("Fixed points instead of random ones")
+        @Describe("On cuts the world into a 3x3 grid around spawn (a third of the border wide each, or of "
+                + "twice the furthest ring when that is smaller). /rtp then opens a map of the nine tiles and "
+                + "sends somebody to the fixed point of the one they pick. The eight outer points are found "
+                + "at each tile's centre the first time somebody goes; the middle one only exists once an "
+                + "admin sets it with /rtp point set middle.")
+        @Key("grid-enabled")
+        boolean gridEnabled,
+
+        @In("rtp/grid") @Title("Worlds with the grid")
+        @Describe("Names, comma separated. Empty means every world /rtp works in. Any other world keeps "
+                + "the random ring.")
+        @Key("grid-worlds")
+        List<String> gridWorlds,
+
+        @In("rtp/grid") @Title("Protected square around each point") @Range(min = 0, max = 64)
+        @Describe("Blocks, one side of the server claim kept around each point so its platform cannot be "
+                + "griefed. Zero claims nothing.")
+        @Key("grid-point-claim-size")
+        int gridPointClaimSize) {
 
     public RtpSettings {
         disabledWorlds = disabledWorlds == null ? List.of() : List.copyOf(disabledWorlds);
         safeArrivalPolicy = safeArrivalPolicy == null ? FlagPolicy.AVAILABLE : safeArrivalPolicy;
         price = price == null ? "0" : price;
         skipCooldownPrice = skipCooldownPrice == null ? "0" : skipCooldownPrice;
+        gridWorlds = gridWorlds == null ? List.of("world") : List.copyOf(gridWorlds);
     }
 
     public static final RtpSettings DEFAULTS = new RtpSettings(
             3, 30, true, 100, 5000, FlagPolicy.AVAILABLE, 8, 1, false, List.of(),
-            true, 40, 3000, "0", "0");
+            true, 40, 3000, "0", "0", false, List.of("world"), 7);
 
     // ------------------------------------------------------------------ read back safely
 
@@ -221,83 +244,117 @@ public record RtpSettings(
 
     public RtpSettings withWarmupSeconds(int seconds) {
         return new RtpSettings(seconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
-                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice);
+                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withCooldownSeconds(int seconds) {
         return new RtpSettings(warmupSeconds, seconds, hurtCancelsWarmup, minRadius, maxRadius,
-                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice);
+                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withHurtCancelsWarmup(boolean cancels) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, cancels, minRadius, maxRadius,
-                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice);
+                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withMinRadius(int radius) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, radius, maxRadius,
-                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice);
+                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withMaxRadius(int radius) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, radius,
-                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice);
+                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withSafeArrivalPolicy(FlagPolicy policy) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
-                policy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice);
+                policy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withSafeArrivalRadius(int radius) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
-                safeArrivalPolicy, radius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice);
+                safeArrivalPolicy, radius, heightTolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withHeightTolerance(int tolerance) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
-                safeArrivalPolicy, safeArrivalRadius, tolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice);
+                safeArrivalPolicy, safeArrivalRadius, tolerance, centreOnPlayer, disabledWorlds, poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withCentreOnPlayer(boolean centred) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
                 safeArrivalPolicy, safeArrivalRadius, heightTolerance, centred, disabledWorlds,
-                poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice);
+                poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withDisabledWorlds(List<String> worlds) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
                 safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, worlds,
-                poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice);
+                poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withPoolEnabled(boolean enabled) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
                 safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds,
-                enabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice);
+                enabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withPoolDailyMinimum(int minimum) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
                 safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds,
-                poolEnabled, minimum, poolMaxSize, price, skipCooldownPrice);
+                poolEnabled, minimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withPoolMaxSize(int maxSize) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
                 safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds,
-                poolEnabled, poolDailyMinimum, maxSize, price, skipCooldownPrice);
+                poolEnabled, poolDailyMinimum, maxSize, price, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withPrice(String written) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
                 safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds,
-                poolEnabled, poolDailyMinimum, poolMaxSize, written, skipCooldownPrice);
+                poolEnabled, poolDailyMinimum, poolMaxSize, written, skipCooldownPrice, gridEnabled, gridWorlds, gridPointClaimSize);
     }
 
     public RtpSettings withSkipCooldownPrice(String written) {
         return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
                 safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds,
-                poolEnabled, poolDailyMinimum, poolMaxSize, price, written);
+                poolEnabled, poolDailyMinimum, poolMaxSize, price, written, gridEnabled, gridWorlds, gridPointClaimSize);
+    }
+
+    public RtpSettings withGridEnabled(boolean enabled) {
+        return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
+                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds,
+                poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, enabled, gridWorlds,
+                gridPointClaimSize);
+    }
+
+    public RtpSettings withGridWorlds(List<String> worlds) {
+        return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
+                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds,
+                poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, worlds,
+                gridPointClaimSize);
+    }
+
+    public RtpSettings withGridPointClaimSize(int size) {
+        return new RtpSettings(warmupSeconds, cooldownSeconds, hurtCancelsWarmup, minRadius, maxRadius,
+                safeArrivalPolicy, safeArrivalRadius, heightTolerance, centreOnPlayer, disabledWorlds,
+                poolEnabled, poolDailyMinimum, poolMaxSize, price, skipCooldownPrice, gridEnabled, gridWorlds,
+                size);
+    }
+
+    /** One side of the claim around a point, clamped; zero is none. */
+    public int pointClaimSize() {
+        return Math.max(0, Math.min(64, gridPointClaimSize));
+    }
+
+    /** Whether this world uses the fixed points rather than the random ring. */
+    public boolean gridIn(String world) {
+        if (!gridEnabled || world == null) {
+            return false;
+        }
+        return gridWorlds.isEmpty() || gridWorlds.stream().anyMatch(world::equalsIgnoreCase);
     }
 }

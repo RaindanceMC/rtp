@@ -44,3 +44,26 @@ rtp:
     full: "<yellow>The pool is already as full as it is allowed to be."
     preparing: "<gray>Looking for <white><amount></white> location(s) in <white><world></white>…"
     prepared: "<green>Prepared <white><amount></white> location(s) in <white><world></white>."
+
+  grid:
+    not-here: "<red>There are no fixed teleport points in this world."
+    no-point: "<red>Nowhere safe turned up near the <white><tile></white> point. Try another tile."
+    middle-not-set: "<yellow>The <white><tile></white> point has not been set up yet."
+    nowhere: "<yellow>There is nowhere else to go from here yet."
+    unknown-tile: "<red><white><value></white> is not a tile. Use nw, n, ne, w, middle, e, sw, s or se."
+    warming-up: "<gray>Off to <white><tile></white> in <white><seconds></white>… stand still."
+    arrived: "<green>Welcome to <white><tile></white>: <white><where></white>."
+
+  point:
+    no-permission: "<red>You may not move the teleport points."
+    usage: "<gray>Use <white>/rtp point list</white>, <white>/rtp point set [tile]</white> or <white>/rtp point clear [tile]</white>."
+    only-a-player: "<red>A point is set where you stand, so only a player can set one."
+    set: "<green>The <white><tile></white> point is now at <white><where></white>."
+    set-unprotected: "<yellow>The <white><tile></white> point is now at <white><where></white>, but its ground is not protected: <white><reason></white>."
+    cleared: "<green>The <white><tile></white> point is gone."
+    not-there: "<yellow>The <white><tile></white> point was not set."
+    grid-off: "<yellow>Note: the grid is not switched on in <white><world></white> (settings rtp grid-enabled, grid-worlds)."
+    list-header: "<gold>Teleport points in <white><world></white>:"
+    list-point: "<gray>  <white><tile></white>: <white><where></white> <dark_gray>(<who>)"
+    list-unfound: "<gray>  <white><tile></white>: <dark_gray>found the first time somebody goes, near <where>"
+    list-unset: "<gray>  <white><tile></white>: <dark_gray>not set — /rtp point set <key>"

@@ -17,4 +17,7 @@ public interface IRtpScreensOpener {
      *                    {@code RtpService#go} directly; null when nobody asked for one
      */
     void chooser(Player viewer, Integer minDistance);
+
+    /** The 3x3 map of fixed teleport points, for a world with the grid. */
+    void grid(Player viewer);
 }

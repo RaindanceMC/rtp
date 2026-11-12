@@ -48,7 +48,8 @@
           sweeps the waits that are already over and leaves the running ones alone.
              1.4.0: Paper 26.3 natively (paper-api 26.3, api-version 26.3); no longer loads on 26.2. -->
         <!-- 1.4.1: its cooldown follows the player across the network. -->
-        <plugin.version>1.5.0</plugin.version>
+        <!-- 1.6.0: a 3x3 grid of fixed teleport points around spawn (settings rtp grid-enabled, grid-worlds, grid-point-claim-size): /rtp opens a map of the nine tiles, /rtp <tile>|random, /rtp point list|set|clear; outer points found at each tile centre on first use, middle set by staff, each point kept in a 7x7 server claim (RainsCore 2.86.0 holdForServer). -->
+        <plugin.version>1.6.0</plugin.version>
     </properties>
 
     <dependencies>
